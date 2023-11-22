@@ -1,4 +1,11 @@
 import numpy as np
+import pandas as pd
+
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns  # Optional for enhanced aesthetics
+
 import itertools
 
 
@@ -108,7 +115,131 @@ def library_book_management_mdp(
     return (P, R)
 
 
+def value_iteration(
+    P: np.ndarray, R: np.ndarray, gamma: float = 1e-3, threshold: float = 1e-3
+) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
+    n_actions, n_states = R.shape  # 3 actions, 1024 states
+
+    V = np.zeros(n_states)  # Initialize value function for 1024 states
+
+    historical_delta = []
+    historical_value_function = []
+    while True:
+        delta = 0
+        for s in range(n_states):
+            v = V[s]
+
+            # Update value function
+            V[s] = max(
+                [
+                    sum(
+                        [
+                            P[a, s, s_prime] * (R[a, s_prime] + gamma * V[s_prime])
+                            for s_prime in range(n_states)
+                        ]
+                    )
+                    for a in range(n_actions)
+                ]
+            )
+            delta = max(delta, abs(v - V[s]))
+
+            historical_value_function.append(v)
+            historical_delta.append(delta)
+
+        if delta < threshold:
+            break
+
+    policy = np.zeros(n_states, dtype=int)
+    for s in range(n_states):
+        # Determine the best action for each state
+        policy[s] = np.argmax(
+            [
+                sum(
+                    [
+                        P[a, s, s_prime] * (R[a, s_prime] + gamma * V[s_prime])
+                        for s_prime in range(n_states)
+                    ]
+                )
+                for a in range(n_actions)
+            ]
+        )
+
+    historical_delta_np = np.array(historical_delta)
+    historical_value_function_np = np.array(historical_value_function)
+    performance_metrics_np = np.vstack(
+        (historical_delta_np, historical_value_function_np)
+    )
+
+    performance_metrics_df = pd.DataFrame(
+        performance_metrics_np.T,
+        columns=["Historical Delta", "Historical Value Function"],
+    )
+    performance_metrics_df = performance_metrics_df.reset_index(
+        inplace=False, drop=False
+    ).rename(columns={"index": "Iteration"})
+    return (policy, V, performance_metrics_df)
+
+
+def output_value_iteration_performance_metrics_graph(
+    df: pd.DataFrame,
+    mdp: str,
+    gamma: float,
+    delta_color: str = "blue",
+    value_function_color: str = "green",
+    grid_style: str = "whitegrid",
+) -> None:
+    title = f"{mdp.replace('_', ' ').title()}: \nHistorical Delta Over Iterations; gamma = {gamma}"
+    output_location = f"../outputs/value_iteration/{mdp}_historical_performance_metrics_gamma_{str(gamma).replace('.', '_')}.png"
+
+    os.makedirs(os.path.dirname(output_location), exist_ok=True)
+
+    sns.set_style(grid_style)
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(
+        df["Iteration"],
+        df["Historical Delta"],
+        label="Historical Delta",
+        color=delta_color,
+    )
+    plt.yscale("log")
+    plt.xlabel("Iteration")
+    plt.ylabel("Value")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(output_location)
+    plt.close()
+
+
 if __name__ == "__main__":
+    # Simple Weather Model MDP
+    mdp = "simple_weather_model"
+    (P, R) = simple_weather_model_mdp()
+    # (P, R) = library_book_management_mdp()
+    gamma = 1e-3
+    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+    output_value_iteration_performance_metrics_graph(df=performance_metrics_df, mdp=mdp, gamma=gamma)
+
+    gamma = 0.9
+    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+    output_value_iteration_performance_metrics_graph(df=performance_metrics_df, mdp=mdp, gamma=gamma)
+
+    gamma = 0.99
+    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+    output_value_iteration_performance_metrics_graph(df=performance_metrics_df, mdp=mdp, gamma=gamma)
+
+    # Library Book Management MDP
+    mdp = "library_book_management"
     (P, R) = library_book_management_mdp()
-    print(P.shape)
-    print(R.shape)
+    gamma = 1e-3
+    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+    output_value_iteration_performance_metrics_graph(df=performance_metrics_df, mdp=mdp, gamma=gamma)
+
+    gamma = 0.9
+    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+    output_value_iteration_performance_metrics_graph(df=performance_metrics_df, mdp=mdp, gamma=gamma)
+
+    gamma = 0.99
+    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+    output_value_iteration_performance_metrics_graph(df=performance_metrics_df, mdp=mdp, gamma=gamma)
