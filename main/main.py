@@ -161,11 +161,79 @@ def value_iteration(
     return (policy, V, performance_metrics_df)
 
 
+def policy_iteration(
+    P: np.ndarray, R: np.ndarray, gamma: float = 0.99, threshold: float = 1e-3
+) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
+    n_actions, n_states = R.shape
+
+    policy = np.random.randint(n_actions, size=n_states)  # Random initial policy
+    V = np.zeros(n_states)  # Initialize value function
+
+    historical_delta = []
+    historical_value_function = []
+
+    is_policy_stable = False
+    while not is_policy_stable:
+        # Policy Evaluation
+        while True:
+            delta = 0
+            for s in range(n_states):
+                v = V[s]
+                V[s] = sum(
+                    [
+                        P[policy[s], s, s_prime]
+                        * (R[policy[s], s_prime] + gamma * V[s_prime])
+                        for s_prime in range(n_states)
+                    ]
+                )
+                delta = max(delta, abs(v - V[s]))
+
+                historical_value_function.append(v)
+                historical_delta.append(delta)
+
+            if delta < threshold:
+                break
+
+        # Policy Improvement
+        is_policy_stable = True
+        for s in range(n_states):
+            old_action = policy[s]
+            policy[s] = np.argmax(
+                [
+                    sum(
+                        [
+                            P[a, s, s_prime] * (R[a, s_prime] + gamma * V[s_prime])
+                            for s_prime in range(n_states)
+                        ]
+                    )
+                    for a in range(n_actions)
+                ]
+            )
+
+            if old_action != policy[s]:
+                is_policy_stable = False
+
+    historical_delta_np = np.array(historical_delta)
+    historical_value_function_np = np.array(historical_value_function)
+    performance_metrics_np = np.vstack(
+        (historical_delta_np, historical_value_function_np)
+    )
+
+    performance_metrics_df = pd.DataFrame(
+        performance_metrics_np.T,
+        columns=["Historical Delta", "Historical Value Function"],
+    )
+    performance_metrics_df = performance_metrics_df.reset_index(
+        inplace=False, drop=False
+    ).rename(columns={"index": "Iteration"})
+
+    return (policy, V, performance_metrics_df)
+
+
 def output_value_iteration_performance_metrics_graph(
     df: pd.DataFrame,
     mdp: str,
     gamma: float,
-    delta_color: str = "blue",
     value_function_color: str = "green",
     grid_style: str = "whitegrid",
 ) -> None:
@@ -181,13 +249,50 @@ def output_value_iteration_performance_metrics_graph(
         df["Iteration"],
         df["Historical Delta"],
         label="Historical Delta",
-        color=delta_color,
+        color="blue",
     )
     plt.plot(
-        df["Iteration"]
+        df["Iteration"],
         df["Historical Value Function"],
         label="Historical Value Function",
-        color=delta_color,
+        color="red",
+    )
+    plt.yscale("log")
+    plt.xlabel("Iteration")
+    plt.ylabel("Value")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(output_location)
+    plt.close()
+
+
+def output_policy_iteration_performance_metrics_graph(
+    df: pd.DataFrame,
+    mdp: str,
+    gamma: float,
+    value_function_color: str = "green",
+    grid_style: str = "whitegrid",
+) -> None:
+    title = f"{mdp.replace('_', ' ').title()}: \nHistorical Delta Over Iterations; gamma = {gamma}"
+    output_location = f"../outputs/policy_iteration/{mdp}_historical_performance_metrics_gamma_{str(gamma).replace('.', '_')}.png"
+
+    os.makedirs(os.path.dirname(output_location), exist_ok=True)
+
+    sns.set_style(grid_style)
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(
+        df["Iteration"],
+        df["Historical Delta"],
+        label="Historical Delta",
+        color="blue",
+    )
+    plt.plot(
+        df["Iteration"],
+        df["Historical Value Function"],
+        label="Historical Value Function",
+        color="red",
     )
     plt.yscale("log")
     plt.xlabel("Iteration")
@@ -200,38 +305,84 @@ def output_value_iteration_performance_metrics_graph(
 
 
 if __name__ == "__main__":
-    # Simple Weather Model MDP
-    mdp = "simple_weather_model"
-    (P, R) = simple_weather_model_mdp()
-    gamma = 1e-3
-    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
-    output_value_iteration_performance_metrics_graph(
-        df=performance_metrics_df, mdp=mdp, gamma=gamma
-    )
+    RUN_VALUE_ITERATION = False
+    RUN_POLICY_ITERATION = True
+    if RUN_VALUE_ITERATION:
+        ###########################################
+        ## Value Iteration
+        ###########################################
+        # Simple Weather Model MDP
+        mdp = "simple_weather_model"
+        (P, R) = simple_weather_model_mdp()
+        gamma = 1e-3
+        (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+        output_value_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
 
-    gamma = 0.9
-    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
-    output_value_iteration_performance_metrics_graph(
-        df=performance_metrics_df, mdp=mdp, gamma=gamma
-    )
+        gamma = 0.9
+        (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+        output_value_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
 
-    gamma = 0.99
-    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
-    output_value_iteration_performance_metrics_graph(
-        df=performance_metrics_df, mdp=mdp, gamma=gamma
-    )
+        gamma = 0.99
+        (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+        output_value_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
 
-    # Vending Machine MDP
-    mdp = "vending_machine"
-    (P, R) = vending_machine_mdp()
-    gamma = 1e-3
-    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
-    output_value_iteration_performance_metrics_graph(
-        df=performance_metrics_df, mdp=mdp, gamma=gamma
-    )
+        # Vending Machine MDP
+        mdp = "vending_machine"
+        (P, R) = vending_machine_mdp()
+        gamma = 1e-3
+        (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+        output_value_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
 
-    gamma = 0.9
-    (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
-    output_value_iteration_performance_metrics_graph(
-        df=performance_metrics_df, mdp=mdp, gamma=gamma
-    )
+        gamma = 0.9
+        (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
+        output_value_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+
+    if RUN_POLICY_ITERATION:
+        ###########################################
+        ## Policy Iteration
+        ###########################################
+        # Simple Weather Model MDP
+        mdp = "simple_weather_model"
+        (P, R) = simple_weather_model_mdp()
+        gamma = 1e-3
+        (policy, V, performance_metrics_df) = policy_iteration(P, R, gamma=gamma)
+        output_policy_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+
+        gamma = 0.9
+        (policy, V, performance_metrics_df) = policy_iteration(P, R, gamma=gamma)
+        output_policy_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+
+        gamma = 0.99
+        (policy, V, performance_metrics_df) = policy_iteration(P, R, gamma=gamma)
+        output_policy_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+
+        # Vending Machine MDP
+        mdp = "vending_machine"
+        (P, R) = vending_machine_mdp()
+        gamma = 1e-3
+        (policy, V, performance_metrics_df) = policy_iteration(P, R, gamma=gamma)
+        output_policy_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+
+        gamma = 0.9
+        (policy, V, performance_metrics_df) = policy_iteration(P, R, gamma=gamma)
+        output_policy_iteration_performance_metrics_graph(
+            df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
