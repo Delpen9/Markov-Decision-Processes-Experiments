@@ -23,13 +23,19 @@ from Models.DQNAgent import (
     DQNAgent,
 )
 
+from Graphing.graphing import (
+    output_value_iteration_performance_metrics_graph,
+    output_policy_iteration_performance_metrics_graph,
+    plot_train_DQN_performance,
+)
+
 
 def train_DQNAgent(
     episodes: int = 1000,
     batch_size: int = 8,
     environment: callable = SimpleWeatherEnv,
     max_steps: int = 5,
-) -> tuple[DQNAgent, list[float], list[float], list[float]]:
+) -> tuple[DQNAgent, pd.DataFrame]:
     env = environment()
     state_size = env.n_states
     action_size = env.n_actions
@@ -37,7 +43,6 @@ def train_DQNAgent(
 
     # Initialize lists to store metrics
     total_rewards = []
-    steps_per_episode = []
     epsilon_values = []
 
     for e in range(episodes):
@@ -55,13 +60,31 @@ def train_DQNAgent(
                 break
             if len(agent.memory) > batch_size:
                 agent.replay(batch_size)
+
         agent.update_target_model()
 
         # Append metrics after each episode
         total_rewards.append(total_reward)
-        print(total_rewards)
-        steps_per_episode.append(time + 1)
         epsilon_values.append(agent.epsilon)
+
+        total_rewards_np = np.array(total_rewards)
+        epsilon_values_np = np.array(epsilon_values)
+        performance_np = np.vstack((total_rewards_np, epsilon_values_np)).T
+
+        performance_df = pd.DataFrame(
+            performance_np, columns=["Total Rewards", "Epsilon Value"]
+        )
+        performance_df = performance_df.reset_index(drop=False).rename(
+            columns={
+                "index": "Episode",
+            }
+        )
+        performance_df["10-Episode Rolling Avg Rewards"] = (
+            performance_df["Total Rewards"].rolling(window=10).mean()
+        )
+        performance_df["30-Episode Rolling Avg Rewards"] = (
+            performance_df["Total Rewards"].rolling(window=30).mean()
+        )
 
         # Print the episode summary
         print(
@@ -69,81 +92,7 @@ def train_DQNAgent(
         )
 
     # Return the agent and the recorded metrics
-    return (agent, total_rewards, steps_per_episode, epsilon_values)
-
-
-def output_value_iteration_performance_metrics_graph(
-    df: pd.DataFrame,
-    mdp: str,
-    gamma: float,
-    value_function_color: str = "green",
-    grid_style: str = "whitegrid",
-) -> None:
-    title = f"{mdp.replace('_', ' ').title()}: \nHistorical Delta Over Iterations; gamma = {gamma}"
-    output_location = f"../outputs/value_iteration/{mdp}_historical_performance_metrics_gamma_{str(gamma).replace('.', '_')}.png"
-
-    os.makedirs(os.path.dirname(output_location), exist_ok=True)
-
-    sns.set_style(grid_style)
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(
-        df["Iteration"],
-        df["Historical Delta"],
-        label="Historical Delta",
-        color="blue",
-    )
-    plt.plot(
-        df["Iteration"],
-        df["Historical Value Function"],
-        label="Historical Value Function",
-        color="red",
-    )
-    plt.yscale("log")
-    plt.xlabel("Iteration")
-    plt.ylabel("Value")
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(output_location)
-    plt.close()
-
-
-def output_policy_iteration_performance_metrics_graph(
-    df: pd.DataFrame,
-    mdp: str,
-    gamma: float,
-    value_function_color: str = "green",
-    grid_style: str = "whitegrid",
-) -> None:
-    title = f"{mdp.replace('_', ' ').title()}: \nHistorical Delta Over Iterations; gamma = {gamma}"
-    output_location = f"../outputs/policy_iteration/{mdp}_historical_performance_metrics_gamma_{str(gamma).replace('.', '_')}.png"
-
-    os.makedirs(os.path.dirname(output_location), exist_ok=True)
-
-    sns.set_style(grid_style)
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(
-        df["Iteration"],
-        df["Historical Delta"],
-        label="Historical Delta",
-        color="blue",
-    )
-    plt.plot(
-        df["Iteration"],
-        df["Historical Value Function"],
-        label="Historical Value Function",
-        color="red",
-    )
-    plt.yscale("log")
-    plt.xlabel("Iteration")
-    plt.ylabel("Value")
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(output_location)
-    plt.close()
+    return (agent, performance_df)
 
 
 if __name__ == "__main__":
@@ -232,35 +181,35 @@ if __name__ == "__main__":
 
     if RUN_DQN_AGENT:
         # Simple Weather Model MDP
-        episodes = 1000
+        episodes = 150
         batch_size = 8
         environment = SimpleWeatherEnv
         max_steps = 5
-        (
-            trained_agent,
-            total_rewards,
-            steps_per_episode,
-            epsilon_values,
-        ) = train_DQNAgent(
+        (trained_agent, performance_df) = train_DQNAgent(
             episodes=episodes,
             batch_size=batch_size,
             environment=environment,
             max_steps=max_steps,
         )
 
+        plot_train_DQN_performance(
+            mdp="simple_weather_model",
+            df=performance_df,
+        )
+
         # Vending Machine MDP
-        # episodes = 1000
-        # batch_size = 8
-        # environment = VendingMachineEnv
-        # max_steps = 5
-        # (
-        #     trained_agent,
-        #     total_rewards,
-        #     steps_per_episode,
-        #     epsilon_values,
-        # ) = train_DQNAgent(
-        #     episodes=episodes,
-        #     batch_size=batch_size,
-        #     environment=environment,
-        #     max_steps=max_steps,
-        # )
+        episodes = 150
+        batch_size = 8
+        environment = VendingMachineEnv
+        max_steps = 5
+        (trained_agent, performance_df) = train_DQNAgent(
+            episodes=episodes,
+            batch_size=batch_size,
+            environment=environment,
+            max_steps=max_steps,
+        )
+
+        plot_train_DQN_performance(
+            mdp="vending_machine",
+            df=performance_df,
+        )
