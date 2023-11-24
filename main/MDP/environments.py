@@ -158,7 +158,7 @@ class VendingMachineEnv:
 
         # Generate all possible states
         self.states = list(itertools.product(range(max_count + 1), repeat=n_item_types))
-        self.state = _one_hot_encode_state(0)  # Initial state index
+        self.state = self._one_hot_encode_state(0)  # Initial state index
 
         # Initialize transition probabilities and rewards
         self.P, self.R = self._initialize_matrices()
