@@ -77,12 +77,15 @@ def output_policy_iteration_performance_metrics_graph(
     plt.savefig(output_location)
     plt.close()
 
+
 def plot_train_DQN_performance(
     mdp: str,
     df: pd.DataFrame,
     grid_style: str = "whitegrid",
+    random_resets: bool = False,
 ) -> None:
-    title = f"{mdp.replace('_', ' ').title()}: \nDQN: Performance Over Episodes"
+    random_resets_title = "Random Resets" if random_resets else "Initial State Resets"
+    title = f"{random_resets_title}\n{mdp.replace('_', ' ').title()}: \nDQN: Performance Over Episodes"
     output_location = f"../outputs/DQN/{mdp}_performance_over_episodes.png"
 
     os.makedirs(os.path.dirname(output_location), exist_ok=True)

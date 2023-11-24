@@ -180,27 +180,33 @@ if __name__ == "__main__":
         )
 
     if RUN_DQN_AGENT:
+        ###########################################
+        ## Random State Resets
+        ###########################################
         # Simple Weather Model MDP
-        # episodes = 150
-        # batch_size = 8
-        # environment = SimpleWeatherEnv
-        # max_steps = 5
-        # (trained_agent, performance_df) = train_DQNAgent(
-        #     episodes=episodes,
-        #     batch_size=batch_size,
-        #     environment=environment,
-        #     max_steps=max_steps,
-        # )
+        episodes = 150
+        batch_size = 8
+        environment = SimpleWeatherEnv
+        environment.reset_to_initial_state = False
+        max_steps = 5
+        (trained_agent, performance_df) = train_DQNAgent(
+            episodes=episodes,
+            batch_size=batch_size,
+            environment=environment,
+            max_steps=max_steps,
+        )
 
-        # plot_train_DQN_performance(
-        #     mdp="simple_weather_model",
-        #     df=performance_df,
-        # )
+        plot_train_DQN_performance(
+            mdp="simple_weather_model",
+            df=performance_df,
+            random_resets=True,
+        )
 
         # Vending Machine MDP
         episodes = 150
         batch_size = 8
         environment = VendingMachineEnv
+        environment.reset_to_initial_state = False
         max_steps = 5
         (trained_agent, performance_df) = train_DQNAgent(
             episodes=episodes,
@@ -212,4 +218,46 @@ if __name__ == "__main__":
         plot_train_DQN_performance(
             mdp="vending_machine",
             df=performance_df,
+            random_resets=True,
+        )
+
+        ###########################################
+        ## Initial State Resets
+        ###########################################
+        # Simple Weather Model MDP
+        episodes = 150
+        batch_size = 8
+        environment = SimpleWeatherEnv
+        environment.reset_to_initial_state = True
+        max_steps = 5
+        (trained_agent, performance_df) = train_DQNAgent(
+            episodes=episodes,
+            batch_size=batch_size,
+            environment=environment,
+            max_steps=max_steps,
+        )
+
+        plot_train_DQN_performance(
+            mdp="simple_weather_model",
+            df=performance_df,
+            random_resets=False,
+        )
+
+        # Vending Machine MDP
+        episodes = 150
+        batch_size = 8
+        environment = VendingMachineEnv
+        environment.reset_to_initial_state = True
+        max_steps = 5
+        (trained_agent, performance_df) = train_DQNAgent(
+            episodes=episodes,
+            batch_size=batch_size,
+            environment=environment,
+            max_steps=max_steps,
+        )
+
+        plot_train_DQN_performance(
+            mdp="vending_machine",
+            df=performance_df,
+            random_resets=False,
         )

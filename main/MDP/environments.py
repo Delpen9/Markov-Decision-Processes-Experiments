@@ -44,6 +44,8 @@ class SimpleWeatherEnv:
         self.states = list([0, 1])
         self.state = self._one_hot_encode_state(0)  # Initial state as one-hot
 
+        self.reset_to_initial_state = False
+
         # Transition Probability Matrix [actions x states x states]
         self.P = np.zeros((self.n_actions, self.n_states, self.n_states))
         # Carrying an umbrella
@@ -81,8 +83,12 @@ class SimpleWeatherEnv:
         return self.state, reward, done
 
     def reset(self):
-        self.state = self._one_hot_encode_state(0)  # Initial state of 0
-        return self.state
+        if self.reset_to_initial_state:
+            self.state = self._one_hot_encode_state(0)  # Initial state of 0
+            return self.state
+        else:
+            self.state = self._one_hot_encode_state(np.random.choice(range(self.n_states)))  # Random initial state
+            return self.state
 
 
 def vending_machine_mdp(
@@ -148,6 +154,9 @@ class VendingMachineEnv:
         self.max_count = max_count
         self.n_item_types = n_item_types
         self.n_states = (max_count + 1) ** n_item_types
+
+        self.reset_to_initial_state = False
+
         self.n_actions = 2 * n_item_types
 
         # Check if the state space size exceeds the limit
@@ -210,5 +219,9 @@ class VendingMachineEnv:
         return self.state, reward, done
 
     def reset(self):
-        self.state = self._one_hot_encode_state(np.random.choice(range(self.n_states)))  # Random initial state
-        return self.state
+        if self.reset_to_initial_state:
+            self.state = self._one_hot_encode_state(0)  # Initial state of 0
+            return self.state
+        else:
+            self.state = self._one_hot_encode_state(np.random.choice(range(self.n_states)))  # Random initial state
+            return self.state
