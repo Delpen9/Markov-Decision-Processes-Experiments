@@ -48,6 +48,7 @@ class SimpleWeatherEnv:
 
         # Transition Probability Matrix [actions x states x states]
         self.P = np.zeros((self.n_actions, self.n_states, self.n_states))
+
         # Carrying an umbrella
         self.P[0, 0, 0] = 0.9  # Sunny today, sunny tomorrow
         self.P[0, 0, 1] = 0.1  # Sunny today, rainy tomorrow
@@ -108,12 +109,6 @@ def vending_machine_mdp(
     n_states = (max_count + 1) ** n_item_types
     n_actions = 2 * n_item_types  # Actions: Add or remove each item type
 
-    # Check if the state space size exceeds the limit
-    if n_states < 1000:
-        raise ValueError(
-            "The state space size is less than 1000. Increase max_count or n_item_types."
-        )
-
     # Initialize transition probabilities and rewards
     P = np.zeros((n_actions, n_states, n_states))
     R = np.zeros((n_actions, n_states))
@@ -158,12 +153,6 @@ class VendingMachineEnv:
         self.reset_to_initial_state = False
 
         self.n_actions = 2 * n_item_types
-
-        # Check if the state space size exceeds the limit
-        if self.n_states < 1000:
-            raise ValueError(
-                "The state space size is less than 1000. Increase max_count or n_item_types."
-            )
 
         # Generate all possible states
         self.states = list(itertools.product(range(max_count + 1), repeat=n_item_types))
@@ -225,3 +214,36 @@ class VendingMachineEnv:
         else:
             self.state = self._one_hot_encode_state(np.random.choice(range(self.n_states)))  # Random initial state
             return self.state
+
+
+def create_vending_machine_heatmap_and_save(
+    output_path: str = "../outputs/reward_mappings/vending_machine_heatmap.png"
+) -> None:
+    # Generate the reward matrix
+    _, R = vending_machine_mdp()
+
+    # Create a heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(R, annot=True, fmt=".1f", cmap="viridis")
+    plt.title("Vending Machine: Reward Matrix Heatmap")
+    plt.xlabel("State")
+    plt.ylabel("Action")
+
+    # Save the heatmap to a PNG file
+    plt.savefig(output_path)
+
+def create_simple_weather_model_heatmap_and_save(
+    output_path: str = "../outputs/reward_mappings/simple_weather_model_heatmap.png"
+) -> None:
+    # Generate the reward matrix
+    _, R = simple_weather_model_mdp()
+
+    # Create a heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(R, annot=True, fmt=".1f", cmap="viridis")
+    plt.title("Simple Weather Model: Reward Matrix Heatmap")
+    plt.xlabel("State")
+    plt.ylabel("Action")
+
+    # Save the heatmap to a PNG file
+    plt.savefig(output_path)
