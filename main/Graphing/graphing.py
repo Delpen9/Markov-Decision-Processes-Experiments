@@ -86,7 +86,7 @@ def plot_train_DQN_performance(
 ) -> None:
     random_resets_title = "Random Resets" if random_resets else "Initial State Resets"
     title = f"{random_resets_title}\n{mdp.replace('_', ' ').title()}: \nDQN: Performance Over Episodes"
-    output_location = f"../outputs/DQN/{mdp}_performance_over_episodes.png"
+    output_location = f"../outputs/DQN/{random_resets_title.replace(' ', '_').lower()}_{mdp}_performance_over_episodes.png"
 
     os.makedirs(os.path.dirname(output_location), exist_ok=True)
 
