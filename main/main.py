@@ -183,15 +183,45 @@ def get_state_space_analysis(
 
     return time_space_performance_df
 
+
+def get_state_space_graph(
+    input_csv_path: str = "../outputs/state_space/state_space_analysis.csv",
+    output_path: str = "../outputs/state_space/state_space_complexity_vs_wall_clock_time.png",
+) -> None:
+    df = pd.read_csv(input_csv_path)
+    plt.figure(figsize=(10, 6))
+
+    # Plot each column against Complexity
+    for column in df.columns[2:]:
+        plt.plot(df["Complexity"], df[column], label=column)
+
+    # Set the scale of x and y axis to logarithmic
+    plt.xscale("log")
+    plt.yscale("log")
+
+    # Adding labels and title
+    plt.xlabel("Complexity")
+    plt.ylabel("Wall Clock Time")
+    plt.title(
+        "Value Iteration, Policy Iteration, Deep Q-Learning Wall Clock Time Over Environment Complexity"
+    )
+
+    # Adding a legend
+    plt.legend()
+
+    plt.savefig(output_path)
+
+
 def run_policy_analysis() -> None:
     create_vending_machine_heatmap_and_save()
     create_simple_weather_model_heatmap_and_save()
 
+
 if __name__ == "__main__":
-    RUN_VALUE_ITERATION = True
-    RUN_POLICY_ITERATION = True
+    RUN_VALUE_ITERATION = False
+    RUN_POLICY_ITERATION = False
     RUN_DQN_AGENT = False
-    RUN_STATE_SPACE_ANALYSIS = False
+    RUN_STATE_SPACE_ANALYSIS = True
     RUN_POLICY_ANALYSIS = False
 
     if RUN_VALUE_ITERATION:
@@ -209,8 +239,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=2,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "value_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="value_iteration",
             mdp=mdp,
         )
 
@@ -222,8 +252,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=2,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "value_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="value_iteration",
             mdp=mdp,
         )
 
@@ -235,8 +265,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=2,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "value_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="value_iteration",
             mdp=mdp,
         )
 
@@ -251,8 +281,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=6,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "value_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="value_iteration",
             mdp=mdp,
         )
 
@@ -264,8 +294,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=6,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "value_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="value_iteration",
             mdp=mdp,
         )
 
@@ -284,8 +314,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=2,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "policy_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="policy_iteration",
             mdp=mdp,
         )
 
@@ -297,8 +327,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=2,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "policy_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="policy_iteration",
             mdp=mdp,
         )
 
@@ -310,8 +340,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=2,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "policy_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="policy_iteration",
             mdp=mdp,
         )
 
@@ -326,8 +356,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=6,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "policy_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="policy_iteration",
             mdp=mdp,
         )
 
@@ -339,8 +369,8 @@ if __name__ == "__main__":
         one_hot_encode_policy_and_create_heatmap(
             policy=policy,
             n_actions=6,
-            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
-            model = "policy_iteration",
+            additional_details=rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model="policy_iteration",
             mdp=mdp,
         )
 
@@ -428,7 +458,8 @@ if __name__ == "__main__":
         )
 
     if RUN_STATE_SPACE_ANALYSIS:
-        get_state_space_analysis()
-    
+        # get_state_space_analysis()
+        get_state_space_graph()
+
     if RUN_POLICY_ANALYSIS:
         run_policy_analysis()
