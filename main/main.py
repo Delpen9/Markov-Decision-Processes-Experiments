@@ -37,6 +37,76 @@ from Graphing.graphing import (
 )
 
 
+def train_DQNAgent_with_convergence_condition(
+    episodes: int = 1000,
+    batch_size: int = 8,
+    environment: Union[callable, object] = SimpleWeatherEnv,
+    max_steps: int = 5,
+    rolling_window: int = 5,  # Window size for rolling average
+    reward_threshold: float = 4,  # Optional convergence reward threshold
+    improvement_threshold: float = 1.0,  # Minimum improvement threshold
+) -> tuple[DQNAgent, pd.DataFrame]:
+
+    if type(environment) == callable:
+        env = environment()
+    else:
+        env = environment
+
+    state_size = env.n_states
+    action_size = env.n_actions
+    agent = DQNAgent(state_size, action_size)
+
+    total_rewards = []
+    epsilon_values = []
+
+    for e in range(episodes):
+        state = env.reset()
+        state = np.reshape(state, [1, state_size])
+        total_reward = 0
+
+        for time in range(max_steps):
+            action = agent.act(state)
+            next_state, reward, done = env.step(action)
+            next_state = np.reshape(next_state, [1, state_size])
+            agent.remember(state, action, reward, next_state, done)
+            state = next_state
+            total_reward += reward
+            if done:
+                break
+            if len(agent.memory) > batch_size:
+                agent.replay(batch_size)
+
+        agent.update_target_model()
+        total_rewards.append(total_reward)
+        epsilon_values.append(agent.epsilon)
+
+        if len(total_rewards) >= rolling_window:
+            current_avg_reward = np.mean(total_rewards[-rolling_window:])
+            if reward_threshold is not None and current_avg_reward >= reward_threshold:
+                print(f"Convergence achieved at episode {e+1}")
+                break
+            if (
+                e >= rolling_window
+                and np.mean(total_rewards[-(rolling_window * 2) : -rolling_window])
+                - current_avg_reward
+                < improvement_threshold
+            ):
+                print(f"Minimal improvement; convergence likely at episode {e+1}")
+                break
+
+    performance_df = pd.DataFrame(
+        {"Total Rewards": total_rewards, "Epsilon Value": epsilon_values}
+    )
+    performance_df["10-Episode Rolling Avg Rewards"] = (
+        performance_df["Total Rewards"].rolling(window=10).mean()
+    )
+    performance_df["30-Episode Rolling Avg Rewards"] = (
+        performance_df["Total Rewards"].rolling(window=30).mean()
+    )
+
+    return (agent, performance_df)
+
+
 def train_DQNAgent(
     episodes: int = 1000,
     batch_size: int = 8,
@@ -107,8 +177,15 @@ def train_DQNAgent(
 
 def get_state_space_analysis(
     output_location: str = "../outputs/state_space/state_space_analysis.csv",
+    experiment_max_count: int = 15,
+    use_dqn_convergence_condition: bool = False,
 ) -> pd.DataFrame:
-    max_counts = np.arange(1, 15).astype(int)
+    if use_dqn_convergence_condition:
+        output_location = (
+            "../outputs/state_space/state_space_analysis_dqn_convergence.csv"
+        )
+
+    max_counts = np.arange(1, experiment_max_count).astype(int)
     n_item_types = 3
     gamma = 0.9
 
@@ -140,14 +217,28 @@ def get_state_space_analysis(
 
         # Deep Q-Learning
         start_time = time.time()
-        with contextlib.redirect_stdout(io.StringIO()):
-            episodes = 10
+        environment = VendingMachineEnv(max_count=max_count)
+        environment.max_count = max_count
+        environment.reset_to_initial_state = False
+        if use_dqn_convergence_condition == False:
+            with contextlib.redirect_stdout(io.StringIO()):
+                episodes = 10
+                batch_size = 8
+                max_steps = 5
+                (trained_agent, performance_df) = train_DQNAgent(
+                    episodes=episodes,
+                    batch_size=batch_size,
+                    environment=environment,
+                    max_steps=max_steps,
+                )
+        else:
+            episodes = 1000
             batch_size = 8
-            environment = VendingMachineEnv(max_count=max_count)
-            environment.max_count = max_count
-            environment.reset_to_initial_state = False
             max_steps = 5
-            (trained_agent, performance_df) = train_DQNAgent(
+            (
+                trained_agent,
+                performance_df,
+            ) = train_DQNAgent_with_convergence_condition(
                 episodes=episodes,
                 batch_size=batch_size,
                 environment=environment,
@@ -218,11 +309,11 @@ def run_policy_analysis() -> None:
 
 
 if __name__ == "__main__":
-    RUN_VALUE_ITERATION = False
-    RUN_POLICY_ITERATION = False
-    RUN_DQN_AGENT = False
+    RUN_VALUE_ITERATION = True
+    RUN_POLICY_ITERATION = True
+    RUN_DQN_AGENT = True
     RUN_STATE_SPACE_ANALYSIS = True
-    RUN_POLICY_ANALYSIS = False
+    RUN_POLICY_ANALYSIS = True
 
     if RUN_VALUE_ITERATION:
         ###########################################
@@ -458,8 +549,15 @@ if __name__ == "__main__":
         )
 
     if RUN_STATE_SPACE_ANALYSIS:
-        # get_state_space_analysis()
+        get_state_space_analysis()
         get_state_space_graph()
+        get_state_space_analysis(
+            experiment_max_count=5, use_dqn_convergence_condition=True
+        )
+        get_state_space_graph(
+            input_csv_path="../outputs/state_space/state_space_analysis_dqn_convergence.csv",
+            output_path="../outputs/state_space/state_space_complexity_vs_wall_clock_time_dqn_convergence.png",
+        )
 
     if RUN_POLICY_ANALYSIS:
         run_policy_analysis()
