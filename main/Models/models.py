@@ -3,6 +3,8 @@ import pandas as pd
 
 import itertools
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def value_iteration(
     P: np.ndarray, R: np.ndarray, gamma: float = 1e-3, threshold: float = 1e-3
@@ -136,3 +138,31 @@ def policy_iteration(
     ).rename(columns={"index": "Iteration"})
 
     return (policy, V, performance_metrics_df)
+
+def one_hot_encode_policy_and_create_heatmap(
+    policy : np.ndarray,
+    n_actions : int,
+    additional_details : str,
+    model : str = "value_iteration",
+    mdp : str = "simple_weather_model",
+    output_filepath : str = "../outputs/reward_mappings/"
+) -> None:
+    output_filepath = fr"{output_filepath}{mdp}_{model}_policy_heatmap_{additional_details}.png"
+    
+    n_states = policy.shape[0]
+    policy_matrix = np.zeros((n_states, n_actions))
+
+    for s in range(n_states):
+        action = policy[s]
+        policy_matrix[s, action] = 1
+
+    # Create a heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(policy_matrix.T, annot=True, cmap="viridis")
+    plt.title("Policy Heatmap")
+    plt.xlabel("State")
+    plt.ylabel("Action")
+
+    # Save the heatmap to a file
+    plt.savefig(output_filepath)
+    plt.close()

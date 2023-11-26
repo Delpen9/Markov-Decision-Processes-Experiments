@@ -4,6 +4,8 @@ import pandas as pd
 import itertools
 import random
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def simple_weather_model_mdp() -> tuple[np.ndarray, np.ndarray]:
     # Number of states and actions

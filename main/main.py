@@ -23,6 +23,7 @@ from MDP.environments import (
 from Models.models import (
     value_iteration,
     policy_iteration,
+    one_hot_encode_policy_and_create_heatmap,
 )
 
 from Models.DQNAgent import (
@@ -182,10 +183,13 @@ def get_state_space_analysis(
 
     return time_space_performance_df
 
+def run_policy_analysis() -> None:
+    create_vending_machine_heatmap_and_save()
+    create_simple_weather_model_heatmap_and_save()
 
 if __name__ == "__main__":
-    RUN_VALUE_ITERATION = False
-    RUN_POLICY_ITERATION = False
+    RUN_VALUE_ITERATION = True
+    RUN_POLICY_ITERATION = True
     RUN_DQN_AGENT = False
     RUN_STATE_SPACE_ANALYSIS = False
     RUN_POLICY_ANALYSIS = False
@@ -202,17 +206,38 @@ if __name__ == "__main__":
         output_value_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
         )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=2,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "value_iteration",
+            mdp=mdp,
+        )
 
         gamma = 0.9
         (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
         output_value_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
         )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=2,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "value_iteration",
+            mdp=mdp,
+        )
 
         gamma = 0.99
         (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
         output_value_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=2,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "value_iteration",
+            mdp=mdp,
         )
 
         # Vending Machine MDP
@@ -223,11 +248,25 @@ if __name__ == "__main__":
         output_value_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
         )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=6,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "value_iteration",
+            mdp=mdp,
+        )
 
         gamma = 0.9
         (policy, V, performance_metrics_df) = value_iteration(P, R, gamma=gamma)
         output_value_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=6,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "value_iteration",
+            mdp=mdp,
         )
 
     if RUN_POLICY_ITERATION:
@@ -242,17 +281,38 @@ if __name__ == "__main__":
         output_policy_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
         )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=2,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "policy_iteration",
+            mdp=mdp,
+        )
 
         gamma = 0.9
         (policy, V, performance_metrics_df) = policy_iteration(P, R, gamma=gamma)
         output_policy_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
         )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=2,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "policy_iteration",
+            mdp=mdp,
+        )
 
         gamma = 0.99
         (policy, V, performance_metrics_df) = policy_iteration(P, R, gamma=gamma)
         output_policy_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=2,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "policy_iteration",
+            mdp=mdp,
         )
 
         # Vending Machine MDP
@@ -263,11 +323,25 @@ if __name__ == "__main__":
         output_policy_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
         )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=6,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "policy_iteration",
+            mdp=mdp,
+        )
 
         gamma = 0.9
         (policy, V, performance_metrics_df) = policy_iteration(P, R, gamma=gamma)
         output_policy_iteration_performance_metrics_graph(
             df=performance_metrics_df, mdp=mdp, gamma=gamma
+        )
+        one_hot_encode_policy_and_create_heatmap(
+            policy=policy,
+            n_actions=6,
+            additional_details = rf"{str(gamma).replace('.', '_').replace('-', '_')}",
+            model = "policy_iteration",
+            mdp=mdp,
         )
 
     if RUN_DQN_AGENT:
@@ -355,3 +429,6 @@ if __name__ == "__main__":
 
     if RUN_STATE_SPACE_ANALYSIS:
         get_state_space_analysis()
+    
+    if RUN_POLICY_ANALYSIS:
+        run_policy_analysis()
